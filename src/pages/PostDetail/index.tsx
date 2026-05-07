@@ -4,6 +4,8 @@ import { usePostDetail } from './hooks/usePostDetail';
 import { formatRelativeTime } from '../../utils/time';
 import CommentItem from './components/CommentItem';
 import ShareDropdown from './components/ShareDropdown';
+import PostContent from '../../components/PostContent';
+import TrendingBar from '../Trends/components/TrendingBar';
 
 const PostDetail = () => {
   const { postId } = useParams<{ postId: string }>();
@@ -37,7 +39,9 @@ const PostDetail = () => {
         <h1 className="text-xl font-bold">Post</h1>
       </div>
 
-      <div className="max-w-2xl mx-auto p-4">
+      <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-3 gap-4 py-4">
+      <div className="lg:col-span-2">
+        <div className="max-w-2xl">
         {/* Post Header */}
         <div className="flex gap-3 items-center cursor-pointer" onClick={() => navigate(`/profile/${post.user.id}`)}>
           <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full shrink-0" />
@@ -48,7 +52,7 @@ const PostDetail = () => {
         </div>
 
         {/* Post Content */}
-        <div className="mt-4 text-[17px] leading-relaxed">{post.content}</div>
+        <PostContent content={post.content} className="mt-4" />
         {post.imageUrl && <img src={post.imageUrl} alt="Post" className="mt-4 rounded-2xl w-full object-cover border border-zinc-800" />}
         <div className="text-zinc-500 text-sm mt-4">{formatRelativeTime(post.createdAt)}</div>
 
@@ -81,7 +85,7 @@ const PostDetail = () => {
 
           {post.comments?.length > 0 ? (
             <div>
-              {post.comments.map((comment: any) => (
+              {post.comments.map((comment: Record<string, any>) => (
                 <CommentItem key={comment.id} comment={comment} depth={0}
                   activeReplyId={replyToId} replyText={replyText} onReplyTextChange={setReplyText}
                   onStartReply={handleStartReply} onCancelReply={handleCancelReply} onSubmitReply={handleSubmitReply}
@@ -92,6 +96,15 @@ const PostDetail = () => {
             <p className="text-zinc-500 text-center py-12">No comments yet. Be the first to comment!</p>
           )}
         </div>
+        </div>
+      </div>
+
+      {/* Trending Sidebar - Desktop Only */}
+      <aside className="hidden lg:block lg:col-span-1">
+        <div className="sticky top-14">
+          <TrendingBar />
+        </div>
+      </aside>
       </div>
     </div>
   );

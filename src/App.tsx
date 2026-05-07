@@ -3,9 +3,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useAuth } from './context/AuthContext';
 import Login from './pages/auth/Login/index';
 import Register from './pages/auth/Register/index';
-import Feed from './pages/Feed/index';           // ← Import Feed
+import Feed from './pages/Feed/index';
 import CreatePost from './pages/CreatePost';
 import PostDetail from './pages/PostDetail';
+import Trends from './pages/Trends';
+import HashtagDetail from './pages/HashtagDetail';
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -21,6 +23,8 @@ function App() {
         <Route path="/feed" element={isAuthenticated ? <Feed /> : <Navigate to="/login" replace />} />
         <Route path="/create-post" element={isAuthenticated ? <CreatePost /> : <Navigate to="/login" replace />} />
         <Route path="/post/:postId" element={isAuthenticated ? <PostDetail /> : <Navigate to="/login" replace />} />
+        <Route path="/trends" element={isAuthenticated ? <Trends /> : <Navigate to="/login" replace />} />
+        <Route path="/trending/:hashtag" element={isAuthenticated ? <HashtagDetail /> : <Navigate to="/login" replace />} />
 
         {/* Default Route */}
         <Route path="/" element={<Navigate to={isAuthenticated ? "/feed" : "/login"} replace />} />

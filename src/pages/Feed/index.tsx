@@ -5,6 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useFeed } from './hooks/useFeed';
 import { formatRelativeTime } from '../../utils/time';
 import ShareDropdown from '../PostDetail/components/ShareDropdown';
+import PostContent from '../../components/PostContent';
+import TrendingBar from '../Trends/components/TrendingBar';
 
 const Feed = () => {
   const { logout, user } = useAuth();
@@ -31,16 +33,22 @@ const Feed = () => {
   }
 
   if (error) {
-    return <div className="min-h-screen bg-black text-white flex items-center justify-center text-red-500">Failed to load feed</div>;
+    return <div className="min-h-screen bg-black text-white flex items-center justify-center"><span className="text-red-500">Failed to load feed</span></div>;
   }
 
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Navbar */}
       <nav className="border-b border-zinc-800 bg-black/95 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-3xl font-bold tracking-tighter">Pulse</h1>
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate('/trends')}
+              className="px-4 py-2 text-sm border border-zinc-700 rounded-full hover:bg-zinc-900 hover:border-blue-500 cursor-pointer transition text-zinc-300 hover:text-blue-400"
+            >
+              🔍 Explore
+            </button>
             <span className="text-sm text-zinc-400">@{user?.username}</span>
             <button onClick={logout} className="px-5 py-2 text-sm border border-zinc-700 rounded-full hover:bg-zinc-900 cursor-pointer">
               Logout
@@ -49,7 +57,8 @@ const Feed = () => {
         </div>
       </nav>
 
-      <div className="max-w-2xl mx-auto pt-4">
+      <div className="max-w-7xl mx-auto px-4 pt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="lg:col-span-2">
         {/* Create Post Button */}
         <div className="px-4 mb-6">
           <button
@@ -81,7 +90,7 @@ const Feed = () => {
               </div>
 
               {/* Post Content */}
-              <div className="mt-3 text-[17px] leading-relaxed text-white">{post.content}</div>
+              <PostContent content={post.content} className="text-white mt-3" />
 
               {/* Image */}
               {post.imageUrl && (
@@ -137,6 +146,14 @@ const Feed = () => {
             </div>
           ))
         )}
+      </div>
+
+      {/* Trending Sidebar - Desktop Only */}
+      <aside className="hidden lg:block lg:col-span-1">
+        <div className="sticky top-14">
+          <TrendingBar />
+        </div>
+      </aside>
       </div>
     </div>
   );
