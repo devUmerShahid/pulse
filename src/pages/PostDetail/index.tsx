@@ -1,11 +1,13 @@
 // src/pages/PostDetail/index.tsx
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePostDetail } from './hooks/usePostDetail';
+import { subscribeToEvent } from '../../services/socket';
 import { formatRelativeTime } from '../../utils/time';
 import CommentItem from './components/CommentItem';
 import ShareDropdown from './components/ShareDropdown';
 import PostContent from '../../components/PostContent';
 import TrendingBar from '../Trends/components/TrendingBar';
+import { useEffect, useState } from 'react';
 
 const PostDetail = () => {
   const { postId } = useParams<{ postId: string }>();
@@ -19,8 +21,120 @@ const PostDetail = () => {
     handleStartReply, handleCancelReply, handleSubmitReply,
   } = usePostDetail(postId);
 
+  const [displayPost, setDisplayPost] = useState(post);
+  const [displayComments, setDisplayComments] = useState(post?.comments || []);
+
+  // Update displayPost when post changes from API
+  useEffect(() => {
+    if (post) {
+      setDisplayPost(post);
+      setDisplayComments(post.comments || []);
+    }
+  }, [post]);
+
+  // ✅ LISTEN TO NEW COMMENTS (COMMENT_CREATED event from backend)
+  useEffect(() => {
+    if (!postId) return;
+
+    const cleanup = subscribeToEvent('COMMENT_CREATED', (eventData) => {
+      console.log('💬 New comment received');
+      
+      // Only update if comment is for THIS post
+      if (eventData.postId === postId && eventData.comment) {
+        setDisplayComments((prevComments) => [...prevComments, eventData.comment]);
+        
+        // Update comment count
+        if (setDisplayPost) {
+          setDisplayPost((prev) => ({
+            ...prev,
+            _count: {
+              ...prev._count,
+              comments: (prev._count.comments || 0) + 1,
+            },
+          }));
+        }
+      }
+    });
+
+    return cleanup;
+  }, [postId]);
+
+  // ✅ LISTEN TO DELETED COMMENTS (COMMENT_REMOVED event from backend)
+  useEffect(() => {
+    if (!postId) return;
+
+    const cleanup = subscribeToEvent('COMMENT_REMOVED', (eventData) => {
+      console.log('🗑️ Comment deleted');
+      
+      if (eventData.postId === postId && eventData.commentId) {
+        // Remove deleted comment from list
+        setDisplayComments((prevComments) =>
+          prevComments.filter((c) => c.id !== eventData.commentId)
+        );
+
+        // Update comment count
+        if (setDisplayPost) {
+          setDisplayPost((prev) => ({
+            ...prev,
+            _count: {
+              ...prev._count,
+              comments: Math.max(0, (prev._count.comments || 1) - 1),
+            },
+          }));
+        }
+      }
+    });
+
+    return cleanup;
+  }, [postId]);
+
+  // ✅ LISTEN TO LIKE EVENTS
+  useEffect(() => {
+    if (!postId) return;
+
+    const handlePostLiked = (eventData: any) => {
+      if (eventData.postId === postId) {
+        console.log('❤️ Post liked, new count:', eventData.newLikeCount);
+        
+        if (displayPost) {
+          setDisplayPost((prev) => ({
+            ...prev,
+            _count: {
+              ...prev._count,
+              likes: eventData.newLikeCount,
+            },
+          }));
+        }
+      }
+    };
+
+    const handlePostUnliked = (eventData: any) => {
+      if (eventData.postId === postId) {
+        console.log('💔 Post unliked, new count:', eventData.newLikeCount);
+        
+        if (displayPost) {
+          setDisplayPost((prev) => ({
+            ...prev,
+            _count: {
+              ...prev._count,
+              likes: eventData.newLikeCount,
+            },
+          }));
+        }
+      }
+    };
+
+    const cleanupLike = subscribeToEvent('POST_LIKED', handlePostLiked);
+    const cleanupUnlike = subscribeToEvent('POST_UNLIKED', handlePostUnliked);
+
+    return () => {
+      cleanupLike();
+      cleanupUnlike();
+    };
+  }, [postId, displayPost]);
+
   if (isLoading) return <div className="min-h-screen bg-black text-white flex items-center justify-center gap-3"><div className="w-5 h-5 border-2 border-zinc-700 border-t-blue-500 rounded-full animate-spin" />Loading post...</div>;
-  if (error || !post) return (
+  if (error || !displayPost) return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center">
       <div className="text-center">
         <p className="text-red-500">Post not found</p>
@@ -43,24 +157,24 @@ const PostDetail = () => {
       <div className="lg:col-span-2">
         <div className="max-w-2xl">
         {/* Post Header */}
-        <div className="flex gap-3 items-center cursor-pointer" onClick={() => navigate(`/profile/${post.user.id}`)}>
+        <div className="flex gap-3 items-center cursor-pointer" onClick={() => navigate(`/profile/${displayPost.user.id}`)}>
           <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full shrink-0" />
           <div>
-            <div className="font-bold hover:underline">{post.user.name || post.user.username}</div>
-            <div className="text-zinc-500 text-sm">@{post.user.username}</div>
+            <div className="font-bold hover:underline">{displayPost.user.name || displayPost.user.username}</div>
+            <div className="text-zinc-500 text-sm">@{displayPost.user.username}</div>
           </div>
         </div>
 
         {/* Post Content */}
-        <PostContent content={post.content} className="mt-4" />
-        {post.imageUrl && <img src={post.imageUrl} alt="Post" className="mt-4 rounded-2xl w-full object-cover border border-zinc-800" />}
-        <div className="text-zinc-500 text-sm mt-4">{formatRelativeTime(post.createdAt)}</div>
+        <PostContent content={displayPost.content} className="mt-4" />
+        {displayPost.imageUrl && <img src={displayPost.imageUrl} alt="Post" className="mt-4 rounded-2xl w-full object-cover border border-zinc-800" />}
+        <div className="text-zinc-500 text-sm mt-4">{formatRelativeTime(displayPost.createdAt)}</div>
 
         {/* Action Bar */}
         <div className="flex gap-8 mt-6 text-zinc-500 border-t border-b border-zinc-800 py-4">
-          <button onClick={handleLike} className="flex items-center gap-2 hover:text-red-500 transition cursor-pointer">❤️ {post._count.likes}</button>
-          <button className="flex items-center gap-2 hover:text-blue-500 transition cursor-pointer">💬 {post._count.comments}</button>
-          <ShareDropdown postId={postId!} postContent={post.content} postAuthor={post.user.username} />
+          <button onClick={handleLike} className="flex items-center gap-2 hover:text-red-500 transition cursor-pointer">❤️ {displayPost._count.likes}</button>
+          <button className="flex items-center gap-2 hover:text-blue-500 transition cursor-pointer">💬 {displayPost._count.comments}</button>
+          <ShareDropdown postId={postId!} postContent={displayPost.content} postAuthor={displayPost.user.username} />
         </div>
 
         {/* Comment Input */}
@@ -80,12 +194,12 @@ const PostDetail = () => {
         {/* Comments */}
         <div className="mt-8">
           <h3 className="text-lg font-semibold mb-5 flex items-center gap-2">
-            Comments <span className="bg-zinc-800 text-zinc-400 text-xs px-2.5 py-0.5 rounded-full">{post._count.comments}</span>
+            Comments <span className="bg-zinc-800 text-zinc-400 text-xs px-2.5 py-0.5 rounded-full">{displayPost._count.comments}</span>
           </h3>
 
-          {post.comments?.length > 0 ? (
+          {displayComments?.length > 0 ? (
             <div>
-              {post.comments.map((comment: Record<string, any>) => (
+              {displayComments.map((comment: Record<string, any>) => (
                 <CommentItem key={comment.id} comment={comment} depth={0}
                   activeReplyId={replyToId} replyText={replyText} onReplyTextChange={setReplyText}
                   onStartReply={handleStartReply} onCancelReply={handleCancelReply} onSubmitReply={handleSubmitReply}

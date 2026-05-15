@@ -1,6 +1,7 @@
 // src/App.tsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { SocketProvider } from './context/SocketContext';
 import Login from './pages/auth/Login/index';
 import Register from './pages/auth/Register/index';
 import Feed from './pages/Feed/index';
@@ -13,23 +14,25 @@ function App() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/feed" replace />} />
-        <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/feed" replace />} />
+    <SocketProvider>
+      <Router>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/feed" replace />} />
+          <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/feed" replace />} />
 
-        {/* Protected Routes */}
-        <Route path="/feed" element={isAuthenticated ? <Feed /> : <Navigate to="/login" replace />} />
-        <Route path="/create-post" element={isAuthenticated ? <CreatePost /> : <Navigate to="/login" replace />} />
-        <Route path="/post/:postId" element={isAuthenticated ? <PostDetail /> : <Navigate to="/login" replace />} />
-        <Route path="/trends" element={isAuthenticated ? <Trends /> : <Navigate to="/login" replace />} />
-        <Route path="/trending/:hashtag" element={isAuthenticated ? <HashtagDetail /> : <Navigate to="/login" replace />} />
+          {/* Protected Routes */}
+          <Route path="/feed" element={isAuthenticated ? <Feed /> : <Navigate to="/login" replace />} />
+          <Route path="/create-post" element={isAuthenticated ? <CreatePost /> : <Navigate to="/login" replace />} />
+          <Route path="/post/:postId" element={isAuthenticated ? <PostDetail /> : <Navigate to="/login" replace />} />
+          <Route path="/trends" element={isAuthenticated ? <Trends /> : <Navigate to="/login" replace />} />
+          <Route path="/trending/:hashtag" element={isAuthenticated ? <HashtagDetail /> : <Navigate to="/login" replace />} />
 
-        {/* Default Route */}
-        <Route path="/" element={<Navigate to={isAuthenticated ? "/feed" : "/login"} replace />} />
-      </Routes>
-    </Router>
+          {/* Default Route */}
+          <Route path="/" element={<Navigate to={isAuthenticated ? "/feed" : "/login"} replace />} />
+        </Routes>
+      </Router>
+    </SocketProvider>
   );
 }
 

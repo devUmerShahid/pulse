@@ -1,8 +1,9 @@
 // src/pages/Feed/index.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useFeed } from './hooks/useFeed';
+import { subscribeToEvent } from '../../services/socket';
 import { formatRelativeTime } from '../../utils/time';
 import ShareDropdown from '../PostDetail/components/ShareDropdown';
 import PostContent from '../../components/PostContent';
@@ -16,6 +17,95 @@ const Feed = () => {
 
   const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
+  const [displayPosts, setDisplayPosts] = useState(posts);
+
+  // Update displayPosts when posts change from API
+  useEffect(() => {
+    setDisplayPosts(posts);
+  }, [posts]);
+
+  // ✅ LISTEN TO REAL-TIME FEED UPDATES
+  useEffect(() => {
+    const handlePostCreated = (eventData: any) => {
+      if (!eventData?.post) return;
+      console.log('✨ New post received:', eventData.post.content);
+      setDisplayPosts((prevPosts) => [eventData.post, ...prevPosts]);
+    };
+
+    const handlePostLiked = (eventData: any) => {
+      const postId = eventData?.postId;
+      const likeCount = eventData?.newLikeCount ?? eventData?.likeCount;
+      if (!postId || likeCount == null) return;
+
+      setDisplayPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                _count: {
+                  ...post._count,
+                  likes: likeCount,
+                },
+              }
+            : post
+        )
+      );
+    };
+
+    const handlePostUnliked = (eventData: any) => {
+      handlePostLiked(eventData);
+    };
+
+    const handleCommentCreated = (eventData: any) => {
+      const postId = eventData?.postId;
+      if (!postId) return;
+      setDisplayPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                _count: {
+                  ...post._count,
+                  comments: (post._count?.comments || 0) + 1,
+                },
+              }
+            : post
+        )
+      );
+    };
+
+    const handleCommentRemoved = (eventData: any) => {
+      const postId = eventData?.postId;
+      if (!postId) return;
+      setDisplayPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                _count: {
+                  ...post._count,
+                  comments: Math.max(0, (post._count?.comments || 1) - 1),
+                },
+              }
+            : post
+        )
+      );
+    };
+
+    const cleanupPostCreated = subscribeToEvent('POST_CREATED', handlePostCreated);
+    const cleanupPostLiked = subscribeToEvent('POST_LIKED', handlePostLiked);
+    const cleanupPostUnliked = subscribeToEvent('POST_UNLIKED', handlePostUnliked);
+    const cleanupCommentCreated = subscribeToEvent('COMMENT_CREATED', handleCommentCreated);
+    const cleanupCommentRemoved = subscribeToEvent('COMMENT_REMOVED', handleCommentRemoved);
+
+    return () => {
+      cleanupPostCreated();
+      cleanupPostLiked();
+      cleanupPostUnliked();
+      cleanupCommentCreated();
+      cleanupCommentRemoved();
+    };
+  }, []);
 
   const handleCommentSubmit = (postId: string) => {
     if (!commentText.trim()) return;
@@ -69,10 +159,10 @@ const Feed = () => {
           </button>
         </div>
 
-        {posts.length === 0 ? (
+        {displayPosts.length === 0 ? (
           <div className="text-center py-20 text-zinc-500">No posts yet. Be the first to post!</div>
         ) : (
-          posts.map((post) => (
+          displayPosts.map((post) => (
             <div
               key={post.id}
               className="border-b border-zinc-800 px-4 py-6 hover:bg-zinc-950/50 transition cursor-pointer"
