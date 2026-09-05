@@ -15,7 +15,10 @@ interface Post {
   _count: {
     likes: number;
     comments: number;
+    bookmarks?: number;
   };
+  isBookmarked?: boolean;
+  isLiked?: boolean;
 }
 
 export const useHashtagPosts = (hashtagName: string | undefined) => {

@@ -1,6 +1,7 @@
-import React, { createContext, useContext, type ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, type ReactNode } from 'react';
 import { Socket } from 'socket.io-client';
 import socket from '../services/socket';
+import { useAuth } from './AuthContext';
 
 const SocketContext = createContext<Socket | null>(null);
 
@@ -9,6 +10,36 @@ interface SocketProviderProps {
 }
 
 export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
+  const { isAuthenticated, token, user } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated && token && user) {
+      // Update socket auth credentials with the latest values before connecting
+      socket.auth = {
+        token,
+        userId: user.id,
+        username: user.username,
+      };
+
+      // Connect if not already connected
+      if (!socket.connected) {
+        socket.connect();
+      }
+    } else {
+      // Disconnect when user logs out
+      if (socket.connected) {
+        socket.disconnect();
+      }
+    }
+
+    return () => {
+      // Cleanup on unmount (e.g., full page teardown)
+      if (socket.connected) {
+        socket.disconnect();
+      }
+    };
+  }, [isAuthenticated, token, user]);
+
   return (
     <SocketContext.Provider value={socket}>
       {children}
@@ -36,12 +67,14 @@ export const useSocketConnected = () => {
     setConnected(socketInstance.connected);
     
     // Listen to connection changes
-    socketInstance.on('connect', () => setConnected(true));
-    socketInstance.on('disconnect', () => setConnected(false));
+    const onConnect = () => setConnected(true);
+    const onDisconnect = () => setConnected(false);
+    socketInstance.on('connect', onConnect);
+    socketInstance.on('disconnect', onDisconnect);
     
     return () => {
-      socketInstance.off('connect');
-      socketInstance.off('disconnect');
+      socketInstance.off('connect', onConnect);
+      socketInstance.off('disconnect', onDisconnect);
     };
   }, [socketInstance]);
   
@@ -62,3 +95,4 @@ export const useSocketEmit = () => {
 };
 
 export default SocketContext;
+

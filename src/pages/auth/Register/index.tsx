@@ -1,7 +1,14 @@
 // src/pages/auth/Register/index.tsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../../../api';
+import AuthLayout from '../components/AuthLayout';
+import PasswordInput from '../components/PasswordInput';
+// import AuthDivider from '../components/AuthDivider';
+// import GoogleSignInButton from '../components/GoogleSignInButton';
+
+const inputClass =
+  'w-full rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-[#7B5CF6] focus:ring-2 focus:ring-[#7B5CF6]/20';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -11,17 +18,13 @@ const Register = () => {
     password: '',
     confirmPassword: '',
   });
-
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,7 +37,7 @@ const Register = () => {
     }
 
     if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters");
+      setError('Password must be at least 6 characters');
       return;
     }
 
@@ -47,108 +50,113 @@ const Register = () => {
         name: formData.name,
         password: formData.password,
       });
-
-      alert('Account created successfully! Please login.');
       navigate('/login');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Registration failed. Please try again.');
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+          : undefined;
+      setError(message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-white px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-10">
-          <h1 className="text-5xl font-bold tracking-tight">Pulse</h1>
-          <p className="text-zinc-500 mt-2">Join the conversation</p>
+    <AuthLayout
+      title="Create your account"
+      subtitle="Join Pulse and start sharing with the world."
+      footer={
+        <>
+          Already have an account?{' '}
+          <Link to="/login" className="font-medium text-[#7B5CF6] hover:underline">
+            Sign in
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-zinc-700">
+            Full Name
+          </label>
+          <input
+            id="name"
+            type="text"
+            name="name"
+            placeholder="Jane Doe"
+            value={formData.name}
+            onChange={handleChange}
+            className={inputClass}
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <input
-              type="text"
-              name="name"
-              placeholder="Full Name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full px-5 py-4 bg-zinc-900 border border-zinc-700 rounded-2xl focus:outline-none focus:border-blue-500 text-lg"
-            />
-          </div>
-
-          <div>
-            <input
-              type="email"
-              name="email"
-              placeholder="Email address"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full px-5 py-4 bg-zinc-900 border border-zinc-700 rounded-2xl focus:outline-none focus:border-blue-500 text-lg"
-              required
-            />
-          </div>
-
-          <div>
-            <input
-              type="text"
-              name="username"
-              placeholder="Username"
-              value={formData.username}
-              onChange={handleChange}
-              className="w-full px-5 py-4 bg-zinc-900 border border-zinc-700 rounded-2xl focus:outline-none focus:border-blue-500 text-lg"
-              required
-            />
-          </div>
-
-          <div>
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full px-5 py-4 bg-zinc-900 border border-zinc-700 rounded-2xl focus:outline-none focus:border-blue-500 text-lg"
-              required
-            />
-          </div>
-
-          <div>
-            <input
-              type="password"
-              name="confirmPassword"
-              placeholder="Confirm Password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className="w-full px-5 py-4 bg-zinc-900 border border-zinc-700 rounded-2xl focus:outline-none focus:border-blue-500 text-lg"
-              required
-            />
-          </div>
-
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-white text-black py-4 rounded-2xl font-semibold text-lg hover:bg-zinc-200 transition disabled:opacity-70 mt-4"
-          >
-            {loading ? 'Creating account...' : 'Create Account'}
-          </button>
-        </form>
-
-        <div className="text-center mt-8">
-          <p className="text-zinc-500">
-            Already have an account?{' '}
-            <span
-              onClick={() => navigate('/login')}
-              className="text-blue-500 font-medium cursor-pointer hover:underline"
-            >
-              Sign in
-            </span>
-          </p>
+        <div>
+          <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-zinc-700">
+            Email Address
+          </label>
+          <input
+            id="email"
+            type="email"
+            name="email"
+            placeholder="name@company.com"
+            value={formData.email}
+            onChange={handleChange}
+            className={inputClass}
+            required
+          />
         </div>
-      </div>
-    </div>
+
+        <div>
+          <label htmlFor="username" className="mb-1.5 block text-sm font-medium text-zinc-700">
+            Username
+          </label>
+          <input
+            id="username"
+            type="text"
+            name="username"
+            placeholder="janedoe"
+            value={formData.username}
+            onChange={handleChange}
+            className={inputClass}
+            required
+          />
+        </div>
+
+        <PasswordInput
+          id="password"
+          name="password"
+          label="Password"
+          value={formData.password}
+          onChange={handleChange}
+          required
+        />
+
+        <PasswordInput
+          id="confirmPassword"
+          name="confirmPassword"
+          label="Confirm Password"
+          value={formData.confirmPassword}
+          onChange={handleChange}
+          required
+        />
+
+        {error && (
+          <p className="rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-600">{error}</p>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-lg bg-[#7B5CF6] py-3 text-sm font-semibold text-white transition hover:bg-[#6B4CE6] disabled:opacity-60 cursor-pointer mt-2"
+        >
+          {loading ? 'Creating account...' : 'Sign Up'}
+        </button>
+      </form>
+
+      {/* <AuthDivider />
+      <GoogleSignInButton label="Sign up with Google" /> */}
+    </AuthLayout>
   );
 };
 

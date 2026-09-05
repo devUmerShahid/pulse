@@ -31,13 +31,22 @@ import io, { Socket } from 'socket.io-client';
  */
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:4000';
 
+// Helper to parse stored user info
+function getStoredUser(): { id?: string; username?: string } {
+  try {
+    const raw = localStorage.getItem('user');
+    if (raw) return JSON.parse(raw);
+  } catch { /* ignore */ }
+  return {};
+}
+
 export const socket: Socket = io(SOCKET_URL, {
   /**
    * CONFIGURATION OPTIONS
    */
   
-  // Auto connect on creation
-  autoConnect: true,
+  // Don't auto-connect — let SocketContext connect after auth is ready
+  autoConnect: false,
   
   // Reconnect automatically
   reconnection: true,
@@ -45,16 +54,20 @@ export const socket: Socket = io(SOCKET_URL, {
   reconnectionDelayMax: 5000,   // Max 5 seconds between attempts
   reconnectionAttempts: 5,      // Try 5 times before giving up
   
-  // Include auth token in handshake
+  // Auth object — this is what backend reads via socket.handshake.auth
+  auth: {
+    token: localStorage.getItem('token') || '',
+    userId: getStoredUser().id || '',
+    username: getStoredUser().username || '',
+  },
+
+  // Include auth token in headers as well (for fallback)
   extraHeaders: {
     Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
   },
   
-  // Enable binary data transmission if needed
-  enableBinary: false,
-  
   // Timeout for connection
-  connectTimeout: 10000,
+  timeout: 10000,
 });
 
 /**

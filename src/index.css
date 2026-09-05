@@ -1,9 +1,18 @@
 @import "tailwindcss";
 
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  overflow-x: hidden;
+}
+
 @theme {
   --animate-fade-slide: fadeSlide 0.2s ease;
   --animate-fade-in: fadeIn 0.2s ease;
   --animate-dropdown-in: dropdownIn 0.2s ease;
+  --animate-pulse-dot: pulseDot 1.1s ease-in-out infinite;
 }
 
 @keyframes fadeSlide {
@@ -19,4 +28,10 @@
 @keyframes dropdownIn {
   from { opacity: 0; transform: translateY(8px) scale(0.95); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Brand "pulse" loader: dots breathe + fade in a staggered rhythm */
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.82); }
 }

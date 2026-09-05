@@ -11,6 +11,7 @@ export interface Comment {
     name?: string;
     avatar?: string;
   };
+  replies?: Comment[];
 }
 
 export const commentAPI = {

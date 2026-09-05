@@ -1,8 +1,15 @@
 // src/pages/auth/Login/index.tsx
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../../../api';
+import AuthLayout from '../components/AuthLayout';
+import PasswordInput from '../components/PasswordInput';
+// import AuthDivider from '../components/AuthDivider';
+// import GoogleSignInButton from '../components/GoogleSignInButton';
+
+const inputClass =
+  'w-full rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-[#7B5CF6] focus:ring-2 focus:ring-[#7B5CF6]/20';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -22,68 +29,79 @@ const Login = () => {
       const response = await authAPI.login(email, password);
       login(response.token, response.user);
       navigate('/feed');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid email or password');
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+          : undefined;
+      setError(message || 'Invalid email or password');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-white px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-10">
-          <h1 className="text-5xl font-bold tracking-tight">Pulse</h1>
-          <p className="text-zinc-500 mt-2">Stay in the pulse</p>
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Enter your credentials to access your feed."
+      footer={
+        <>
+          Don&apos;t have an account?{' '}
+          <Link to="/register" className="font-medium text-[#7B5CF6] hover:underline">
+            Sign up
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-zinc-700">
+            Email Address
+          </label>
+          <input
+            id="email"
+            type="email"
+            placeholder="name@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={inputClass}
+            required
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <input
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-5 py-4 bg-zinc-900 border border-zinc-700 rounded-2xl focus:outline-none focus:border-blue-500 text-lg"
-              required
-            />
-          </div>
-
-          <div>
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-5 py-4 bg-zinc-900 border border-zinc-700 rounded-2xl focus:outline-none focus:border-blue-500 text-lg"
-              required
-            />
-          </div>
-
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-white text-black py-4 rounded-2xl font-semibold text-lg hover:bg-zinc-200 transition disabled:opacity-70"
-          >
-            {loading ? 'Signing in...' : 'Sign in'}
-          </button>
-        </form>
-
-        <div className="text-center mt-8">
-          <p className="text-zinc-500">
-            Don't have an account?{' '}
-            <span 
-              onClick={() => navigate('/register')}
-              className="text-blue-500 font-medium cursor-pointer hover:underline"
+        <PasswordInput
+          id="password"
+          label="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          labelExtra={
+            <button
+              type="button"
+              onClick={() => alert('Password reset flow coming soon.')}
+              className="text-sm font-medium text-[#7B5CF6] hover:underline cursor-pointer"
             >
-              Create one
-            </span>
-          </p>
-        </div>
-      </div>
-    </div>
+              Forgot password?
+            </button>
+          }
+        />
+
+        {error && (
+          <p className="rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-600">{error}</p>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-lg bg-[#7B5CF6] py-3 text-sm font-semibold text-white transition hover:bg-[#6B4CE6] disabled:opacity-60 cursor-pointer"
+        >
+          {loading ? 'Signing in...' : 'Sign In'}
+        </button>
+      </form>
+
+      {/* <AuthDivider />
+      <GoogleSignInButton /> */}
+    </AuthLayout>
   );
 };
 

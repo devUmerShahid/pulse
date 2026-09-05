@@ -27,4 +27,9 @@ export const authAPI = {
     const response = await http.post('/auth/reset-password', { token, newPassword });
     return response.data;
   },
+
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    const response = await http.post('/auth/change-password', { currentPassword, newPassword });
+    return response.data;
+  },
 };

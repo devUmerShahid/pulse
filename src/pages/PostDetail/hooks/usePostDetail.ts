@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { postAPI, commentAPI, likeAPI } from '../../../api';
+import { postAPI, commentAPI } from '../../../api';
 
 export const usePostDetail = (postId: string | undefined) => {
   const queryClient = useQueryClient();
@@ -17,11 +17,6 @@ export const usePostDetail = (postId: string | undefined) => {
 
   const post = data?.post;
 
-  const likeMutation = useMutation({
-    mutationFn: () => likeAPI.toggleLike(postId!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['post', postId] }),
-  });
-
   const addCommentMutation = useMutation({
     mutationFn: ({ content, parentId }: { content: string; parentId?: string }) =>
       commentAPI.addComment(postId!, content, parentId),
@@ -33,8 +28,6 @@ export const usePostDetail = (postId: string | undefined) => {
       setReplyText('');
     },
   });
-
-  const handleLike = () => likeMutation.mutate();
 
   const handleCommentSubmit = () => {
     if (!commentText.trim() || !postId) return;
@@ -65,7 +58,6 @@ export const usePostDetail = (postId: string | undefined) => {
     replyToId,
     replyText,
     setReplyText,
-    handleLike,
     handleCommentSubmit,
     handleStartReply,
     handleCancelReply,

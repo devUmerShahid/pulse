@@ -1,13 +1,14 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable react-refresh/only-export-components */
 // src/context/AuthContext.tsx
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, type ReactNode } from 'react';
 import type { User } from '../types';
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (token: string, userData: User) => void;
+  updateUser: (userData: User) => void;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -27,21 +28,28 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
-
-  // Load user from localStorage on initial load
-  useEffect(() => {
+  const [user, setUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem('user');
-    if (token && savedUser) {
-      setUser(JSON.parse(savedUser));
+    if (savedUser) {
+      try {
+        return JSON.parse(savedUser);
+      } catch (e) {
+        return null;
+      }
     }
-  }, [token]);
+    return null;
+  });
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
 
   const login = (newToken: string, userData: User) => {
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(userData));
     setToken(newToken);
+    setUser(userData);
+  };
+
+  const updateUser = (userData: User) => {
+    localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
   };
 
@@ -55,7 +63,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const isAuthenticated = !!token && !!user;
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, token, login, updateUser, logout, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );

@@ -15,7 +15,10 @@ export interface Post {
   _count: {
     likes: number;
     comments: number;
+    bookmarks?: number;
   };
+  isBookmarked?: boolean;
+  isLiked?: boolean;
 }
 
 export const postAPI = {
@@ -31,6 +34,11 @@ export const postAPI = {
 
   getPostById: async (postId: string) => {
     const response = await http.get(`/posts/${postId}`);
+    return response.data;
+  },
+
+  deletePost: async (postId: string) => {
+    const response = await http.delete(`/posts/${postId}`);
     return response.data;
   },
 };

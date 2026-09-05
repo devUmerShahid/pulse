@@ -9,6 +9,11 @@ import CreatePost from './pages/CreatePost';
 import PostDetail from './pages/PostDetail';
 import Trends from './pages/Trends';
 import HashtagDetail from './pages/HashtagDetail';
+import Profile from './pages/Profile';
+import EditProfile from './pages/Profile/EditProfile';
+import Bookmarks from './pages/Bookmarks';
+import Settings from './pages/Settings';
+import Notifications from './pages/Notifications';
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -23,14 +28,25 @@ function App() {
 
           {/* Protected Routes */}
           <Route path="/feed" element={isAuthenticated ? <Feed /> : <Navigate to="/login" replace />} />
-          <Route path="/create-post" element={isAuthenticated ? <CreatePost /> : <Navigate to="/login" replace />} />
           <Route path="/post/:postId" element={isAuthenticated ? <PostDetail /> : <Navigate to="/login" replace />} />
           <Route path="/trends" element={isAuthenticated ? <Trends /> : <Navigate to="/login" replace />} />
+          <Route path="/bookmarks" element={isAuthenticated ? <Bookmarks /> : <Navigate to="/login" replace />} />
+          <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />} />
+          <Route path="/notifications" element={isAuthenticated ? <Notifications /> : <Navigate to="/login" replace />} />
           <Route path="/trending/:hashtag" element={isAuthenticated ? <HashtagDetail /> : <Navigate to="/login" replace />} />
+          <Route path="/profile/edit" element={isAuthenticated ? <EditProfile /> : <Navigate to="/login" replace />} />
+          <Route path="/profile/:username" element={isAuthenticated ? <Profile /> : <Navigate to="/login" replace />} />
+          <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" replace />} />
 
           {/* Default Route */}
           <Route path="/" element={<Navigate to={isAuthenticated ? "/feed" : "/login"} replace />} />
+
+          {/* Catch-all: prevents blank page on unknown paths (e.g. /notifications) */}
+          <Route path="*" element={<Navigate to={isAuthenticated ? "/feed" : "/login"} replace />} />
         </Routes>
+        
+        {/* Global Modals */}
+        {isAuthenticated && <CreatePost />}
       </Router>
     </SocketProvider>
   );
